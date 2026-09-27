@@ -27,7 +27,7 @@ Create an account, set up two-step verification (about 30 seconds with any authe
 
 ## What's in the app
 
-- **Real accounts:** sign up (name, business, email, password), sign in, and two-step verification. Passwords must be 12+ characters with no personal details, and are checked against 900M+ breached passwords via Have I Been Pwned. Only the first 5 characters of a hash ever leave the device.
+- **Real accounts:** sign up (name, business, email, password), sign in, and two-step verification. Passwords must be 12+ characters with no personal details, and are checked against hundreds of millions of breached passwords via Have I Been Pwned. Only the first 5 characters of a hash ever leave the device.
 - **One screen:** profit is the hero, with money in and money out under it, a "costs covered" bar, and the month's feed. Scroll down and profit moves into the top bar, so it never leaves the screen.
 - **Job done:** customer, job, price. Repeat customers are one tap, and "same as last time" fills in the price.
 - **Instant, offline-first, live:** optimistic updates, a 6-second Undo, jobs saved on the phone when there's no signal, and realtime sync across a business's devices.

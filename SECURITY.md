@@ -37,7 +37,7 @@ This app holds people's money. This page explains what protects it, where each p
 
 Latest run: **36/36 blocked**. That includes control checks proving that legitimate actions still work.
 
-## Known limits and next steps
+## Next hardening steps (before public launch)
 
 - **Password reset and email verification** need a verified sending domain. Until then, email confirmation is off so testers can sign up.
 - **Leaked-password protection at the Auth server** needs Supabase Pro. Until then, the HIBP check runs in the app.
