@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CloudOff, Landmark, Wrench } from "lucide-react";
+import { CloudOff, Landmark, Loader2, Sparkles, Wrench } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { dayHeading, dayKey, formatMoney, timeOfDay, type Cost, type Job } from "@/lib/money";
 
 type Entry = {
@@ -76,8 +77,10 @@ export function Feed({
         </span>
       </div>
 
+      {costs.length === 0 && <SampleMonth />}
+
       {groups.length === 0 && (
-        <p className="px-5 py-16 text-center font-serif text-[20px] text-ink-3 italic">
+        <p className="px-5 py-12 text-center font-serif text-[20px] text-ink-3 italic">
           Nothing yet this month. Your first job goes here.
         </p>
       )}
@@ -145,5 +148,41 @@ function Row({ entry, fresh }: { entry: Entry; fresh: boolean }) {
         {formatMoney(entry.cents, { sign: true })}
       </span>
     </motion.li>
+  );
+}
+
+/** No bank feed yet: offer a realistic sample month - into this business only, and only once. */
+function SampleMonth() {
+  const [state, setState] = useState<"idle" | "loading" | "failed">("idle");
+
+  async function load() {
+    setState("loading");
+    const { error } = await createClient().rpc("load_sample_month");
+    if (error) return setState("failed");
+    window.location.reload();
+  }
+
+  return (
+    <div className="mx-5 mt-4 rounded-3xl border border-line bg-white/[0.03] p-4">
+      <p className="flex items-center gap-2 text-[15px] font-semibold">
+        <Landmark className="size-4 text-ink-2" /> No bank feed connected yet
+      </p>
+      <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
+        Load a sample month of plumbing jobs and bills to see One Login in action. It goes into your
+        business only, and only once.
+      </p>
+      <button
+        onClick={load}
+        disabled={state === "loading"}
+        className="mt-3 flex h-11 items-center gap-2 rounded-xl bg-hivis/12 px-4 text-[14px] font-semibold text-hivis transition-colors hover:bg-hivis/20 disabled:opacity-60"
+      >
+        {state === "loading" ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Sparkles className="size-4" />
+        )}
+        {state === "failed" ? "Couldn't load it. Try again" : "Load a sample month"}
+      </button>
+    </div>
   );
 }
