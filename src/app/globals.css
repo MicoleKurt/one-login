@@ -1,26 +1,208 @@
 @import "tailwindcss";
 
+/* Registered so the whole screen can glide between "in the black" and "in the red". */
+@property --mood {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3ee59c;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #050706;
+  --bg-raised: #0b0f0d;
+  --ink: #f2f5f1;
+  --ink-2: #a2aba5;
+  --ink-3: #69726c;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.14);
+  --glass: rgb(255 255 255 / 0.04);
+  --up: #3ee59c;
+  --down: #ff5a6e;
+  --hivis: #e2ff3d;
+  --hivis-ink: #0c1003;
+  --mood: var(--up);
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-glass: var(--glass);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-hivis: var(--hivis);
+  --color-hivis-ink: var(--hivis-ink);
+  --color-mood: var(--mood);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  overscroll-behavior-y: none;
+}
+
+/* Film grain: kills gradient banding and makes flat black feel like a material. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--hivis);
+  color: var(--hivis-ink);
+}
+
+/* Components live in a layer so Tailwind utilities can still override them. */
+@layer components {
+  .mood-transition {
+    transition: --mood 1.1s var(--ease-out-expo);
+  }
+
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "ss01";
+    letter-spacing: -0.045em;
+  }
+
+  .glass {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.025));
+    border: 1px solid var(--line);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 20px 50px -20px rgb(0 0 0 / 0.6);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+  }
+
+  .field {
+    width: 100%;
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.045);
+    border: 1px solid var(--line);
+    padding: 0 16px;
+    height: 56px;
+    font-size: 17px; /* >=16px stops iOS zooming on focus */
+    color: var(--ink);
+    outline: none;
+    transition:
+      border-color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
+  }
+  .field::placeholder {
+    color: var(--ink-3);
+  }
+  .field:focus {
+    border-color: color-mix(in oklab, var(--hivis) 70%, transparent);
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--hivis) 14%, transparent);
+  }
+
+  .btn-hivis {
+    background: var(--hivis);
+    color: var(--hivis-ink);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 -2px 0 rgb(0 0 0 / 0.12),
+      0 10px 30px -8px color-mix(in oklab, var(--hivis) 55%, transparent);
+  }
+  .btn-hivis:disabled {
+    background: rgb(255 255 255 / 0.08);
+    color: var(--ink-3);
+    box-shadow: none;
+  }
+
+  /* A slow sheen that tells you where to tap without saying it. */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgb(255 255 255 / 0.55) 50%,
+      transparent 62%
+    );
+    transform: translateX(-120%);
+    animation: sheen 5.5s var(--ease-out-expo) 1.6s infinite;
+  }
+  @keyframes sheen {
+    0%,
+    55% {
+      transform: translateX(-120%);
+    }
+    85%,
+    100% {
+      transform: translateX(120%);
+    }
+  }
+
+  .live-dot {
+    position: relative;
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    opacity: 0;
+    animation: ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes ping {
+    0% {
+      transform: scale(0.6);
+      opacity: 0.7;
+    }
+    80%,
+    100% {
+      transform: scale(1.9);
+      opacity: 0;
+    }
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheen::before,
+  .live-dot::after {
+    animation: none;
+  }
+  .mood-transition {
+    transition: none;
+  }
 }
