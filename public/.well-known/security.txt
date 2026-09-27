@@ -1,0 +1,5 @@
+Contact: mailto:ico.webdev@gmail.com
+Expires: 2027-09-30T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://one-login-sitevip.vercel.app/.well-known/security.txt
+Policy: Please report vulnerabilities privately. Good-faith research is welcome; no data destruction, no testing against accounts you don't own.

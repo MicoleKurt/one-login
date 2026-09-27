@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Instrument_Serif } from "next/font/google";
+import { connection } from "next/server";
 import "./globals.css";
 
 const geist = Geist({
@@ -39,7 +40,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Render per request so every page carries a fresh CSP nonce.
+  await connection();
   return (
     <html lang="en-AU" className={`${geist.variable} ${instrumentSerif.variable} antialiased`}>
       <body className="min-h-dvh">{children}</body>

@@ -7,13 +7,22 @@ const SECOND_STEP_PAGE = "/mfa";
 
 /**
  * The front door. Every page request:
- *  1. has its Supabase session refreshed and checked;
- *  2. is routed to the one place it's allowed to be:
+ *  1. gets a fresh CSP nonce, so only our own scripts can run;
+ *  2. has its Supabase session refreshed and checked;
+ *  3. is routed to the one place it's allowed to be:
  *     signed out -> /login, password only -> /mfa, fully verified -> the money screen.
  * The database enforces the same rules again with RLS - this is the first wall, not the only one.
  */
 export async function proxy(request: NextRequest) {
-  const forward = () => NextResponse.next({ request });
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy(nonce);
+
+  const forward = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce);
+    headers.set("Content-Security-Policy", csp);
+    return NextResponse.next({ request: { headers } });
+  };
 
   let response = forward();
 
@@ -52,7 +61,30 @@ export async function proxy(request: NextRequest) {
     destination = "/";
   }
 
-  return destination ? redirectWithCookies(request, response, destination) : response;
+  const result = destination ? redirectWithCookies(request, response, destination) : response;
+  result.headers.set("Content-Security-Policy", csp);
+  return result;
+}
+
+function contentSecurityPolicy(nonce: string) {
+  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const realtime = supabase.replace("https://", "wss://");
+  const dev = process.env.NODE_ENV === "development";
+
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    // Inline style attributes power the animations; scripts stay nonce-locked.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    `connect-src 'self' ${supabase} ${realtime} https://api.pwnedpasswords.com`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    ...(dev ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
 }
 
 function redirectWithCookies(request: NextRequest, from: NextResponse, path: string) {

@@ -2,84 +2,79 @@
 
 **One login. One screen. Are we in the black this month?**
 
-A mini "One Login" app for tradies, built for Site VIP & Angus Shield. You sign in once and get one screen with this month's money in, money out, and profit. The profit is huge and green in the black, red if not. One button, **Job done**, adds a job, and the money updates straight away.
+A mini "One Login" app for tradies, built for Site VIP & Angus Shield. You sign in once and see one screen: this month's money in, money out and profit. It's huge and green when you're in the black, and red when you're not. One button, **Job done**, logs a job and the money updates instantly.
 
 **Live:** https://one-login-sitevip.vercel.app
 
-| Demo login |                           |
-| ---------- | ------------------------- |
-| Email      | `kristopher@onelogin.app` |
-| Password   | `outsimple`               |
+Create an account, set up two-step verification (about 30 seconds with any authenticator app), and tap **Load a sample month** to see it with realistic numbers. Then tap **Job done**.
 
-Or tap **Try the demo** on the login screen. There's no signup, just one tap.
+> Round 2 is about keeping it safe. The security model is written up in [SECURITY.md](SECURITY.md), and [`scripts/attack-test.mjs`](scripts/attack-test.mjs) runs 36 real attacks against the live API. All 36 are blocked.
 
 ---
 
-## The 30-second test
+## Security at a glance
 
-1. Open the link on your phone. Tap **Try the demo**.
-2. You're **$386 in the red**, and the screen says so in red.
-3. Tap **Job done**. Customer, job, price. Tap **Add**.
-4. The numbers count up, the screen turns green, and you're back in the black.
+| Guarantee                                    | How it's enforced                                                                                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Passwords are never stored in plain text** | Supabase Auth stores bcrypt hashes. Passwords go straight from the browser to Supabase Auth, so our server never sees one.                                           |
+| **Business A never sees business B**         | Postgres Row Level Security on every table, tied to the caller's membership. A trigger stamps `business_id`, and clients aren't allowed to write that column at all. |
+| **A stolen password isn't enough**           | Two-step verification (TOTP) is mandatory. The database returns no money rows unless the session has passed it (`aal2`).                                             |
+| **Money records can't be quietly changed**   | Jobs are never updated or deleted. Undo is a void: allowed only for the person who logged the job, within 15 minutes, and it's logged.                               |
+| **Every change is on the record**            | An append-only audit log (who, what, when, IP). Updates and deletes are blocked even for the database owner.                                                         |
+| **Least privilege**                          | Anonymous visitors have zero table access. Signed-in users have column-level grants: they can insert 5 job columns and update 1.                                     |
+| **Browser hardening**                        | A per-request nonce CSP, HSTS, `frame-ancestors 'none'`, nosniff, a strict referrer policy and a locked-down Permissions-Policy.                                     |
+| **Onshore data**                             | Supabase in Sydney (ap-southeast-2) and Vercel functions pinned to `syd1`.                                                                                           |
 
-That's the whole app, and you don't need instructions for it.
+## What's in the app
 
-## What's in it
-
-- **One screen.** Profit is the hero. Money in and money out sit under it, then a "costs covered" bar, then the month's feed. When you scroll, profit moves into the top bar, so it never leaves the screen.
-- **Job done in three fields.** Chips show recent customers and jobs, so a repeat customer is one tap. "Same as last time" fills in the price you charged for that job before. The Return key moves to the next field, and the keyboard opens on the first tap, including on iPhone.
-- **Instant.** Updates are optimistic, so the number moves before the server replies, and there's a 6-second **Undo**.
-- **Works with one bar of signal.** No reception on site? The job saves on the phone and syncs itself when you're back online.
-- **Live across devices.** Log a job on your phone and it appears on the office laptop through Supabase Realtime.
-- **The flip.** Crossing from red into the black fires a small celebration, plus haptics on Android.
-- **Premium but calm.** Parallax depth layers follow tilt and scroll, numbers count up, the page mood shifts from green to red, and a film grain sits over it all. Everything is GPU-only transforms and honours `prefers-reduced-motion`.
-- **Installable.** Add it to your home screen as a PWA and it opens full-screen.
+- **Real accounts:** sign up (name, business, email, password), sign in, and two-step verification. Passwords must be 12+ characters with no personal details, and are checked against hundreds of millions of breached passwords via Have I Been Pwned. Only the first 5 characters of a hash ever leave the device.
+- **One screen:** profit is the hero, with money in and money out under it, a "costs covered" bar, and the month's feed. Scroll down and profit moves into the top bar, so it never leaves the screen.
+- **Job done:** customer, job, price. Repeat customers are one tap, and "same as last time" fills in the price.
+- **Instant, offline-first, live:** optimistic updates, a 6-second Undo, jobs saved on the phone when there's no signal, and realtime sync across a business's devices.
+- **Account menu:** shows your two-step status, and lets you sign out of this device or out of **all devices**. Signing out wipes anything cached on the phone.
 
 ## What I left out, on purpose
 
-| Left out                                | Why                                                                                                                                               |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Typing in expenses                      | Money out should come from the **bank feed**, not the tradie's thumbs. Here it's shown as a live bank feed, and the real thing is CDR bank feeds. |
-| Menus, tabs, settings                   | There's one screen, so there's nothing to navigate.                                                                                               |
-| Sign-up and onboarding                  | Accounts get provisioned with the business (or you use the demo). Every screen you add before the numbers is a place people drop off.             |
-| Invoice numbers, GST fields, categories | They're needed for BAS, but the software should work them out, not ask the tradie.                                                                |
-| Charts and reports                      | One number answers the question. The bar under it answers "how close am I?"                                                                       |
-| Editing a job                           | Undo covers 95% of mistakes. Editing is a later feature, not a day-one one.                                                                       |
+| Left out                      | Why                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The one-tap shared demo login | Its password was in this public README. A shared credential is exactly what I'd flag in anyone's review, so it's gone and the account is deleted. |
+| Password reset by email       | This needs a verified sending domain (Resend/Postmark). It's the next thing to add, not something to fake.                                        |
+| Typing in expenses            | Money out should come from the **bank feed**, not the tradie's thumbs.                                                                            |
+| Editing a job                 | Financial records shouldn't be rewritten. You void and re-enter, and both steps stay in the audit trail.                                          |
+| Menus, tabs, settings, charts | There's one screen, so there's nothing to navigate.                                                                                               |
 
 ## How it's built
 
-- **Next.js 16** (App Router, Server Actions, `proxy.ts` for session refresh and route guarding)
-- **Supabase**: Postgres, Auth, Realtime. The project runs in **Sydney (ap-southeast-2)** and the Vercel functions are pinned to **syd1**, so data stays onshore. Onshore hosting is the default under the ATO's DSP Operational Framework.
-- **Row Level Security** on every table: you can only read, add, or delete your own jobs. Costs are read-only to the client because the bank feed writes them.
-- **One round trip** per screen: the `dashboard()` RPC returns the month's jobs and costs. Month boundaries are worked out in `Australia/Sydney`, not UTC.
-- **Motion** for animation and **Tailwind v4** for styling. There's no UI kit.
-- The **demo data rolls forward** by itself: a `pg_cron` job seeds a realistic month for the demo account on the first night of each month.
+- **Next.js 16:** App Router, a `proxy.ts` front door that handles session refresh, 2-step routing and the CSP nonce, plus Server Actions for sign-out.
+- **Supabase:** Postgres, Auth with TOTP MFA, and Realtime. RLS policies and triggers live in [`supabase/migrations`](supabase/migrations).
+- **Motion** for animation and **Tailwind v4** for styling.
 
 ```
 src/
-  app/                 login, dashboard page, server actions, icons, manifest
+  app/                 dashboard page, /login, /signup, /mfa, server actions
   components/
-    dashboard/         hero, feed, job sheet, toast, celebration, data hook
-    login/             login screen with floating parallax cards
-    ui/                backdrop (parallax planes), tilt hook, logo
-  lib/                 money formatting, Supabase clients
-  proxy.ts             session refresh + redirects
-supabase/migrations/   schema, RLS, dashboard RPC, demo seeding
+    auth/              sign in, sign up, two-step forms + the parallax shell
+    dashboard/         hero, feed, job sheet, toast, realtime + offline data hook
+    ui/                parallax backdrop, tilt hook, logo
+  lib/                 money formatting, password rules, Supabase clients
+  proxy.ts             the front door: session, 2-step routing, CSP
+supabase/migrations/   schema, RLS, triggers, audit log
+scripts/attack-test.mjs  36 attacks against the live API
 ```
 
 ## Run it locally
 
 ```bash
-cp .env.example .env.local   # fill in your Supabase URL + publishable key
+cp .env.example .env.local   # Supabase URL + publishable key
 npm install
 npm run dev
 ```
 
-Apply `supabase/migrations/*` to your project. To set up a demo account, create a user in Supabase Auth, then run:
+Apply `supabase/migrations/*` to your project. To run the attack suite, create two confirmed test accounts in two different businesses, then:
 
-```sql
-insert into private.demo_accounts (user_id) values ('<user id>');
-select private.seed_demo_month();
+```bash
+ATTACK_A_EMAIL=a@example.com ATTACK_B_EMAIL=b@example.com ATTACK_PASSWORD=... \
+  node --env-file=.env.local scripts/attack-test.mjs
 ```
 
 ---
