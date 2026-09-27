@@ -14,12 +14,18 @@ import { Toast, type ToastData } from "./toast";
 import { TopBar } from "./top-bar";
 import { useJobs } from "./use-jobs";
 
-export type Viewer = { id: string; email: string; name: string; business: string };
+export type Viewer = {
+  id: string;
+  email: string;
+  name: string;
+  businessId: string;
+  business: string;
+};
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
 export function Dashboard({ data, viewer }: { data: DashboardData; viewer: Viewer }) {
-  const { jobs, add, undo } = useJobs(viewer.id, data.month_start, data.jobs);
+  const { jobs, add, undo } = useJobs(viewer.id, viewer.businessId, data.month_start, data.jobs);
   const costs = data.costs;
 
   const moneyIn = useMemo(() => jobs.reduce((sum, j) => sum + j.amount_cents, 0), [jobs]);
@@ -63,21 +69,28 @@ export function Dashboard({ data, viewer }: { data: DashboardData; viewer: Viewe
       action: {
         label: "Undo",
         run: async () => {
-          const ok = await undo(job);
+          const result = await undo(job);
           setToast(
-            ok
+            result === "undone"
               ? {
                   id: Date.now(),
                   tone: "success",
                   title: "Undone",
-                  detail: `${job.customer} removed`,
+                  detail: `${job.customer} voided`,
                 }
-              : {
-                  id: Date.now(),
-                  tone: "error",
-                  title: "Couldn't undo",
-                  detail: "Check your signal and try again.",
-                },
+              : result === "locked"
+                ? {
+                    id: Date.now(),
+                    tone: "error",
+                    title: "Too late to undo",
+                    detail: "Jobs lock 15 minutes after they're logged.",
+                  }
+                : {
+                    id: Date.now(),
+                    tone: "error",
+                    title: "Couldn't undo",
+                    detail: "Check your signal and try again.",
+                  },
           );
         },
       },

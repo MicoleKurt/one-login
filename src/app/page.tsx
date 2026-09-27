@@ -8,21 +8,26 @@ export default async function Home() {
   const { data: auth } = await supabase.auth.getClaims();
   const claims = auth?.claims;
   if (!claims) redirect("/login");
+  if (claims.aal !== "aal2") redirect("/mfa");
 
   const { data, error } = await supabase.rpc("dashboard");
   if (error) throw new Error("Couldn't load this month's numbers.");
 
-  const meta = (claims.user_metadata ?? {}) as { name?: string; business?: string };
+  const dashboard = data as DashboardData;
+  if (!dashboard.business) throw new Error("This login isn't linked to a business.");
+
   const email = claims.email ?? "";
+  const name = String((claims.user_metadata as { name?: string } | undefined)?.name ?? "").trim();
 
   return (
     <Dashboard
-      data={data as DashboardData}
+      data={dashboard}
       viewer={{
         id: claims.sub,
         email,
-        name: meta.name ?? email.split("@")[0],
-        business: meta.business ?? "My business",
+        name: name || email.split("@")[0],
+        businessId: dashboard.business.id,
+        business: dashboard.business.name,
       }}
     />
   );

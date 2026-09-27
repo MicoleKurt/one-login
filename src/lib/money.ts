@@ -17,6 +17,7 @@ export type Cost = {
 };
 
 export type DashboardData = {
+  business: { id: string; name: string } | null;
   month_start: string;
   now: string;
   jobs: Job[];

@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useTransform, type MotionValue } from "motion/react";
-import { LogOut } from "lucide-react";
-import { signOut } from "@/app/actions";
+import { LogOut, MonitorSmartphone, ShieldCheck } from "lucide-react";
+import { signOut, signOutEverywhere } from "@/app/actions";
 import { LogoMark } from "@/components/ui/logo";
 import { AnimatedMoney } from "./animated-number";
 import type { Viewer } from "./dashboard";
+import { clearDeviceData } from "./use-jobs";
 
 export function TopBar({
   viewer,
@@ -104,15 +105,23 @@ function AccountMenu({ viewer }: { viewer: Viewer }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ type: "spring", damping: 26, stiffness: 420 }}
-            className="glass absolute top-12 right-0 w-64 origin-top-right rounded-2xl bg-[#0d1210]/90 p-2"
+            className="glass absolute top-12 right-0 w-64 origin-top-right rounded-2xl bg-[#0d1210]/97 p-2"
           >
             <div className="px-3 pt-2 pb-3">
               <p className="text-[15px] font-semibold">{viewer.name}</p>
               <p className="truncate text-[13px] text-ink-3">{viewer.email}</p>
+              <p className="mt-2 flex items-center gap-1.5 text-[12px] text-up">
+                <ShieldCheck className="size-3.5" /> Two-step verification on
+              </p>
             </div>
-            <form action={signOut}>
+            <form action={signOut} onSubmit={clearDeviceData}>
               <button className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-[15px] text-ink-2 transition-colors hover:bg-white/5 hover:text-ink active:bg-white/10">
                 <LogOut className="size-4" /> Sign out
+              </button>
+            </form>
+            <form action={signOutEverywhere} onSubmit={clearDeviceData}>
+              <button className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-[15px] text-ink-2 transition-colors hover:bg-white/5 hover:text-ink active:bg-white/10">
+                <MonitorSmartphone className="size-4" /> Sign out of all devices
               </button>
             </form>
           </motion.div>

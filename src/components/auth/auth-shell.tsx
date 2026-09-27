@@ -1,23 +1,29 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { AnimatePresence, motion, useScroll, useTransform, type MotionValue } from "motion/react";
-import { ArrowRight, Check, Eye, EyeOff, Loader2, ShieldCheck, Sparkles } from "lucide-react";
-import { signIn, signInDemo } from "@/app/actions";
+import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
+import { Check, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Backdrop } from "@/components/ui/backdrop";
 import { Wordmark } from "@/components/ui/logo";
 import { useTilt, type Tilt } from "@/components/ui/use-parallax";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
-export function LoginScreen() {
+/** The parallax frame shared by sign in, sign up and two-step verification. */
+export function AuthShell({
+  title,
+  accent,
+  subtitle,
+  hero = false,
+  children,
+}: {
+  title: string;
+  accent: string;
+  subtitle: string;
+  hero?: boolean;
+  children: React.ReactNode;
+}) {
   const tilt = useTilt();
   const { scrollY } = useScroll();
-  const [state, formAction, signingIn] = useActionState(signIn, undefined);
-  const [demoState, demoAction, openingDemo] = useActionState(signInDemo, undefined);
-  const [showPassword, setShowPassword] = useState(false);
-  const error = state?.error ?? demoState?.error;
-  const busy = signingIn || openingDemo;
 
   return (
     <main className="relative mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-5 pt-[calc(env(safe-area-inset-top)+18px)] pb-[calc(env(safe-area-inset-bottom)+18px)]">
@@ -36,142 +42,44 @@ export function LoginScreen() {
         </span>
       </motion.header>
 
-      <HeroCards tilt={tilt} scrollY={scrollY} />
+      {hero ? <HeroCards tilt={tilt} scrollY={scrollY} /> : <div className="h-10" />}
 
       <div className="relative">
-        <h1 className="text-[36px] leading-[1.02] font-semibold tracking-[-0.045em] text-balance">
-          <Reveal delay={0.35}>Your whole business.</Reveal>
-          <Reveal delay={0.47}>
-            <span className="font-serif text-[42px] font-normal tracking-[-0.02em] text-hivis italic">
-              One screen.
+        <h1 className="text-[34px] leading-[1.04] font-semibold tracking-[-0.045em] text-balance">
+          <Reveal delay={0.3}>{title}</Reveal>
+          <Reveal delay={0.42}>
+            <span className="font-serif text-[40px] font-normal tracking-[-0.02em] text-hivis italic">
+              {accent}
             </span>
           </Reveal>
         </h1>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 1 }}
+          transition={{ delay: 0.6, duration: 1 }}
           className="mt-2 text-[15px] leading-relaxed text-ink-2"
         >
-          Money in, money out, profit. Nothing to learn.
+          {subtitle}
         </motion.p>
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.55, duration: 0.9, ease }}
+        transition={{ delay: 0.5, duration: 0.9, ease }}
         className="glass mt-5 rounded-[28px] p-4"
       >
-        <form action={formAction} className="flex flex-col gap-2.5">
-          <label className="sr-only" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck={false}
-            placeholder="Email"
-            required
-            className="field"
-          />
-          <label className="sr-only" htmlFor="password">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Password"
-              required
-              className="field pr-14"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute inset-y-0 right-1 grid w-12 place-items-center text-ink-3 transition-colors hover:text-ink"
-            >
-              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-            </button>
-          </div>
-
-          <AnimatePresence initial={false}>
-            {error && (
-              <motion.p
-                role="alert"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-1 text-[14px] text-down"
-              >
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          <motion.button
-            whileTap={{ scale: 0.975 }}
-            disabled={busy}
-            className="btn-hivis mt-1 flex h-14 items-center justify-center gap-2 rounded-2xl text-[17px] font-semibold tracking-[-0.01em]"
-          >
-            {signingIn ? (
-              <>
-                <Loader2 className="size-5 animate-spin" /> Signing in
-              </>
-            ) : (
-              <>
-                Sign in <ArrowRight className="size-5" strokeWidth={2.4} />
-              </>
-            )}
-          </motion.button>
-        </form>
-
-        <div className="my-2.5 flex items-center gap-3 px-1 text-[12px] text-ink-3">
-          <span className="h-px flex-1 bg-line" />
-          or
-          <span className="h-px flex-1 bg-line" />
-        </div>
-
-        <form action={demoAction}>
-          <motion.button
-            whileTap={{ scale: 0.975 }}
-            disabled={busy}
-            className="flex h-14 w-full items-center justify-between rounded-2xl border border-line-strong bg-white/[0.03] px-4 text-left transition-colors hover:bg-white/[0.06] disabled:opacity-60"
-          >
-            <span className="flex items-center gap-3">
-              <span className="grid size-8 place-items-center rounded-full bg-hivis/12 text-hivis">
-                {openingDemo ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Sparkles className="size-4" />
-                )}
-              </span>
-              <span className="flex flex-col leading-tight">
-                <span className="text-[15px] font-semibold">
-                  {openingDemo ? "Opening your month" : "Try the demo"}
-                </span>
-                <span className="text-[12px] text-ink-3">No signup. One tap.</span>
-              </span>
-            </span>
-            <ArrowRight className="size-5 text-ink-2" />
-          </motion.button>
-        </form>
+        {children}
       </motion.div>
 
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 1 }}
-        className="mt-auto pt-4 text-center text-[11px] tracking-wide text-ink-3"
+        className="mt-auto flex items-center justify-center gap-1.5 pt-5 text-[11px] tracking-wide text-ink-3"
       >
-        Built for Site VIP &amp; Angus Shield
+        <LockKeyhole className="size-3" /> Encrypted · Two-step verified · Site VIP &amp; Angus
+        Shield
       </motion.footer>
     </main>
   );
